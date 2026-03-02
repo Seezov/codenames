@@ -55,6 +55,7 @@ export interface ClientToServerEvents {
   chooseRole: (payload: { role: Role }) => void;
   uploadWords: (payload: { words: string[] }) => void;
   startGame: () => void;
+  startGameShuffled: () => void;
   returnToLobby: () => void;
   giveClue: (payload: { word: string; count: number }) => void;
   voteCard: (payload: { cardIndex: number }) => void;

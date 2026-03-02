@@ -76,6 +76,9 @@ export default function LobbyScreen({ gameState, myPlayer }: Props) {
   const hasBlueOp  = bluePlayers.some(p => p.role === 'operative');
   const teamsReady = hasRedSpy && hasRedOp && hasBlueSpy && hasBlueOp;
 
+  const myTeamPlayers = (gameState?.players ?? []).filter(p => p.team === myPlayer?.team);
+  const teamAlreadyHasSpy = myTeamPlayers.some(p => p.role === 'spymaster' && p.id !== myPlayer?.id);
+
   const startHint = !hasWords ? 'Load a word list first'
     : !hasRedSpy  ? 'Red team needs a spymaster'
     : !hasRedOp   ? 'Red team needs an operative'
@@ -127,6 +130,7 @@ export default function LobbyScreen({ gameState, myPlayer }: Props) {
           >Operative</button>
           <button
             className={myPlayer?.role === 'spymaster' ? 'active' : ''}
+            disabled={teamAlreadyHasSpy}
             onClick={() => selectRole('spymaster')}
           >Spymaster</button>
         </div>

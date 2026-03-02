@@ -15,6 +15,11 @@ export default function WinModal({ winner }: Props) {
         <div className="win-actions">
           <button className="win-btn new-game" onClick={() => socket.emit('startGame')}>
             New Game
+            <span className="win-btn-sub">same roles</span>
+          </button>
+          <button className="win-btn shuffle" onClick={() => socket.emit('startGameShuffled')}>
+            New Game
+            <span className="win-btn-sub">shuffle roles</span>
           </button>
           <button className="win-btn lobby" onClick={() => socket.emit('returnToLobby')}>
             Back to Lobby

@@ -131,20 +131,40 @@ export function addPlayer(state: GameState, player: Omit<Player, 'color'>): void
   rooms.set(state.roomCode, state);
 }
 
-export function chooseTeam(state: GameState, playerId: string, team: Team): void {
+export function chooseTeam(state: GameState, playerId: string, team: Team): string | null {
   const player = state.players.find(p => p.id === playerId);
-  if (player) {
-    player.team = team;
-    rooms.set(state.roomCode, state);
+  if (!player) return 'Player not found.';
+  if (player.team === team) return null;
+
+  if (state.phase === 'playing') {
+    // Ensure old team keeps spy + op after this player leaves
+    const remaining = state.players.filter(p => p.team === player.team && p.id !== playerId);
+    if (!remaining.some(p => p.role === 'spymaster')) return 'Your team would have no spymaster left.';
+    if (!remaining.some(p => p.role === 'operative')) return 'Your team would have no operative left.';
+    // Spymaster cannot join a team that already has one
+    if (player.role === 'spymaster' && state.players.some(p => p.team === team && p.role === 'spymaster')) {
+      return 'That team already has a spymaster.';
+    }
   }
+
+  player.team = team;
+  delete state.cardVotes[playerId];
+  rooms.set(state.roomCode, state);
+  return null;
 }
 
-export function chooseRole(state: GameState, playerId: string, role: Role): void {
+export function chooseRole(state: GameState, playerId: string, role: Role): string | null {
   const player = state.players.find(p => p.id === playerId);
-  if (player) {
-    player.role = role;
-    rooms.set(state.roomCode, state);
+  if (!player) return 'Player not found.';
+  if (role === 'spymaster') {
+    const teamAlreadyHasSpy = state.players.some(
+      p => p.team === player.team && p.role === 'spymaster' && p.id !== playerId
+    );
+    if (teamAlreadyHasSpy) return 'Your team already has a spymaster.';
   }
+  player.role = role;
+  rooms.set(state.roomCode, state);
+  return null;
 }
 
 export function setWordPool(state: GameState, words: string[]): void {
@@ -288,4 +308,16 @@ export function returnToLobby(state: GameState): void {
   state.turnDuration = 0;
   state.turnStartedAt = null;
   rooms.set(state.roomCode, state);
+}
+
+// Shuffle roles within each team, then start the game.
+export function shuffleAndStart(state: GameState): string | null {
+  for (const team of ['red', 'blue'] as Team[]) {
+    const members = state.players.filter(p => p.team === team);
+    if (members.length >= 2) {
+      const roles = shuffle(members.map(p => p.role));
+      members.forEach((p, i) => { p.role = roles[i]; });
+    }
+  }
+  return startGame(state);
 }

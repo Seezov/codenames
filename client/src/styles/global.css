@@ -197,9 +197,28 @@ input:focus { border-color: var(--blue); }
   background: var(--muted);
   flex-shrink: 0;
 }
-.role-dot.spymaster { background: #f4d03f; }
 .player-name { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .role-label { font-size: 0.65rem; color: var(--muted); }
+
+.role-divider {
+  height: 1px;
+  background: var(--border);
+  margin: 0.25rem 0;
+  list-style: none;
+}
+
+.join-team-btn {
+  width: 100%;
+  padding: 0.3rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  border-radius: var(--radius);
+  opacity: 0.8;
+}
+.join-team-btn.red  { border-color: var(--red);  color: var(--red); }
+.join-team-btn.blue { border-color: var(--blue); color: var(--blue); }
+.join-team-btn:hover { opacity: 1; }
 
 /* ── Center ────────────────────────────────────────────────── */
 .game-center {
@@ -432,10 +451,21 @@ input:focus { border-color: var(--blue); }
   gap: 1rem;
 }
 .win-btn {
-  padding: 0.7rem 2rem;
-  font-size: 1rem;
+  padding: 0.6rem 1.6rem;
+  font-size: 0.95rem;
   font-weight: 600;
   letter-spacing: 0.05em;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+}
+.win-btn-sub {
+  font-size: 0.65rem;
+  font-weight: 400;
+  opacity: 0.7;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
 }
 .win-btn.new-game {
   background: var(--blue-dark);
@@ -443,6 +473,12 @@ input:focus { border-color: var(--blue); }
   color: #fff;
 }
 .win-btn.new-game:hover { background: var(--blue); }
+.win-btn.shuffle {
+  background: #2a4a2a;
+  border-color: #4a8a4a;
+  color: #fff;
+}
+.win-btn.shuffle:hover { background: #3a6a3a; }
 .win-btn.lobby {
   background: var(--card-bg);
   border-color: var(--border);

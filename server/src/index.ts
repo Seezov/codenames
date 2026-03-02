@@ -18,6 +18,7 @@ import {
   setSocketRoom,
   setWordPool,
   startGame,
+  shuffleAndStart,
   voteCard,
 } from './gameManager';
 
@@ -82,14 +83,16 @@ io.on('connection', socket => {
   socket.on('chooseTeam', ({ team }) => {
     const state = getRoomBySocket(socket.id);
     if (!state) return;
-    chooseTeam(state, socket.id, team);
+    const err = chooseTeam(state, socket.id, team);
+    if (err) { socket.emit('error', err); return; }
     broadcast(state.roomCode, state);
   });
 
   socket.on('chooseRole', ({ role }) => {
     const state = getRoomBySocket(socket.id);
     if (!state) return;
-    chooseRole(state, socket.id, role);
+    const err = chooseRole(state, socket.id, role);
+    if (err) { socket.emit('error', err); return; }
     broadcast(state.roomCode, state);
   });
 
@@ -104,6 +107,15 @@ io.on('connection', socket => {
     const state = getRoomBySocket(socket.id);
     if (!state) return;
     const err = startGame(state);
+    if (err) { socket.emit('error', err); return; }
+    broadcast(state.roomCode, state);
+    scheduleTurnTimer(state.roomCode);
+  });
+
+  socket.on('startGameShuffled', () => {
+    const state = getRoomBySocket(socket.id);
+    if (!state) return;
+    const err = shuffleAndStart(state);
     if (err) { socket.emit('error', err); return; }
     broadcast(state.roomCode, state);
     scheduleTurnTimer(state.roomCode);
