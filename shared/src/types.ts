@@ -50,6 +50,13 @@ export interface GameState {
   hostId: string; // socket id of the room host (first to join)
 }
 
+export interface RoomInfo {
+  roomCode: string;
+  playerCount: number;
+  phase: 'lobby' | 'playing' | 'ended';
+  hostName: string;
+}
+
 export interface ClientToServerEvents {
   joinRoom: (payload: { roomCode: string; playerName: string }) => void;
   chooseTeam: (payload: { team: Team }) => void;
@@ -61,9 +68,11 @@ export interface ClientToServerEvents {
   giveClue: (payload: { word: string; count: number }) => void;
   voteCard: (payload: { cardIndex: number }) => void;
   endTurn: () => void;
+  getRooms: () => void;
 }
 
 export interface ServerToClientEvents {
   gameState: (state: GameState) => void;
   error: (message: string) => void;
+  roomList: (rooms: RoomInfo[]) => void;
 }

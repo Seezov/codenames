@@ -13,6 +13,7 @@ import {
   getRoom,
   getRoomBySocket,
   giveClue,
+  listRooms,
   removeSocket,
   returnToLobby,
   setSocketRoom,
@@ -34,6 +35,10 @@ const io = new Server<ClientToServerEvents, ServerToClientEvents>(httpServer, {
 
 function broadcast(roomCode: string, state: Parameters<ServerToClientEvents['gameState']>[0]): void {
   io.to(roomCode).emit('gameState', state);
+}
+
+function broadcastRoomList(): void {
+  io.emit('roomList', listRooms());
 }
 
 // ── Turn timers ──────────────────────────────────────────────────────────────
@@ -69,6 +74,10 @@ function scheduleTurnTimer(roomCode: string): void {
 io.on('connection', socket => {
   console.log(`Socket connected: ${socket.id}`);
 
+  socket.on('getRooms', () => {
+    socket.emit('roomList', listRooms());
+  });
+
   socket.on('joinRoom', ({ roomCode, playerName }) => {
     const state = getOrCreateRoom(roomCode);
     addPlayer(state, {
@@ -80,6 +89,7 @@ io.on('connection', socket => {
     setSocketRoom(socket.id, roomCode);
     socket.join(roomCode);
     broadcast(roomCode, state);
+    broadcastRoomList();
   });
 
   socket.on('chooseTeam', ({ team }) => {
@@ -112,6 +122,7 @@ io.on('connection', socket => {
     if (err) { socket.emit('error', err); return; }
     broadcast(state.roomCode, state);
     scheduleTurnTimer(state.roomCode);
+    broadcastRoomList();
   });
 
   socket.on('startGameShuffled', () => {
@@ -121,6 +132,7 @@ io.on('connection', socket => {
     if (err) { socket.emit('error', err); return; }
     broadcast(state.roomCode, state);
     scheduleTurnTimer(state.roomCode);
+    broadcastRoomList();
   });
 
   socket.on('returnToLobby', () => {
@@ -129,6 +141,7 @@ io.on('connection', socket => {
     clearTurnTimer(state.roomCode);
     returnToLobby(state);
     broadcast(state.roomCode, state);
+    broadcastRoomList();
   });
 
   socket.on('giveClue', ({ word, count }) => {
@@ -174,6 +187,7 @@ io.on('connection', socket => {
     console.log(`Socket disconnected: ${socket.id}`);
     const result = removeSocket(socket.id);
     if (result) broadcast(result.roomCode, result.state);
+    broadcastRoomList();
   });
 });
 

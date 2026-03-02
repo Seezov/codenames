@@ -1,5 +1,5 @@
-import { useRef, useState } from 'react';
-import type { GameState, Player, Role, Team } from '@codenames/shared';
+import { useEffect, useRef, useState } from 'react';
+import type { GameState, Player, Role, RoomInfo, Team } from '@codenames/shared';
 import socket from '../socket';
 import sampleWords from '../data/sampleWords';
 
@@ -11,7 +11,16 @@ interface Props {
 export default function LobbyScreen({ gameState, myPlayer }: Props) {
   const [name, setName] = useState('');
   const [roomCode, setRoomCode] = useState('');
+  const [rooms, setRooms] = useState<RoomInfo[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Fetch room list and keep it live while on the join screen
+  useEffect(() => {
+    if (myPlayer) return;
+    socket.emit('getRooms');
+    socket.on('roomList', setRooms);
+    return () => { socket.off('roomList', setRooms); };
+  }, [myPlayer]);
 
   function join() {
     if (!name.trim() || !roomCode.trim()) return;
@@ -46,6 +55,9 @@ export default function LobbyScreen({ gameState, myPlayer }: Props) {
   }
 
   if (!myPlayer) {
+    const phaseLabel = (phase: RoomInfo['phase']) =>
+      phase === 'lobby' ? 'Лобі' : phase === 'playing' ? 'Грається' : 'Завершено';
+
     return (
       <div className="lobby-join">
         <h1>CODENAMES</h1>
@@ -62,6 +74,27 @@ export default function LobbyScreen({ gameState, myPlayer }: Props) {
           onKeyDown={e => e.key === 'Enter' && join()}
         />
         <button onClick={join}>Увійти / Створити кімнату</button>
+
+        {rooms.length > 0 && (
+          <div className="room-browser">
+            <div className="room-browser-title">Активні кімнати</div>
+            <ul className="room-list">
+              {rooms.map(r => (
+                <li
+                  key={r.roomCode}
+                  className={`room-item ${r.phase}`}
+                  onClick={() => setRoomCode(r.roomCode)}
+                  title="Натисніть, щоб заповнити код"
+                >
+                  <span className="room-code">{r.roomCode}</span>
+                  <span className="room-host">{r.hostName}</span>
+                  <span className="room-players">{r.playerCount} {r.playerCount === 1 ? 'гравець' : 'гравців'}</span>
+                  <span className="room-phase">{phaseLabel(r.phase)}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
       </div>
     );
   }

@@ -1,4 +1,4 @@
-import { Card, CardType, GameState, Player, Role, Team } from '@codenames/shared';
+import { Card, CardType, GameState, Player, Role, RoomInfo, Team } from '@codenames/shared';
 
 const rooms = new Map<string, GameState>();
 const socketToRoom = new Map<string, string>();
@@ -335,6 +335,17 @@ export function returnToLobby(state: GameState): void {
   state.turnDuration = 0;
   state.turnStartedAt = null;
   rooms.set(state.roomCode, state);
+}
+
+export function listRooms(): RoomInfo[] {
+  return Array.from(rooms.values())
+    .filter(s => s.players.length > 0)
+    .map(s => ({
+      roomCode: s.roomCode,
+      playerCount: s.players.length,
+      phase: s.phase,
+      hostName: s.players.find(p => p.id === s.hostId)?.name ?? '',
+    }));
 }
 
 // Shuffle roles within each team, then start the game.
