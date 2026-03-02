@@ -1,6 +1,7 @@
 import cors from 'cors';
 import express from 'express';
 import { createServer } from 'http';
+import path from 'path';
 import { Server } from 'socket.io';
 import type { ClientToServerEvents, ServerToClientEvents } from '@codenames/shared';
 import {
@@ -124,6 +125,13 @@ io.on('connection', socket => {
     if (result) broadcast(result.roomCode, result.state);
   });
 });
+
+// Serve built React client in production
+if (process.env.NODE_ENV === 'production') {
+  const clientDist = path.join(__dirname, '../../client/dist');
+  app.use(express.static(clientDist));
+  app.get('*', (_req, res) => res.sendFile(path.join(clientDist, 'index.html')));
+}
 
 const PORT = process.env.PORT ?? 3001;
 httpServer.listen(PORT, () => {
