@@ -69,6 +69,7 @@ export interface ClientToServerEvents {
   voteCard: (payload: { cardIndex: number }) => void;
   endTurn: () => void;
   getRooms: () => void;
+  leaveRoom: () => void;
 }
 
 export interface ServerToClientEvents {

@@ -183,6 +183,23 @@ io.on('connection', socket => {
     scheduleTurnTimer(state.roomCode);
   });
 
+  socket.on('leaveRoom', () => {
+    const state = getRoomBySocket(socket.id);
+    if (!state) return;
+    const { roomCode } = state;
+    const result = removeSocket(socket.id);
+    if (result) {
+      // Socket is still in the io room here, so leaver receives this broadcast too,
+      // sees themselves removed from players → myPlayer becomes null → join screen
+      broadcast(result.roomCode, result.state);
+    } else {
+      // Last player — room deleted; send a blank lobby state directly
+      socket.emit('gameState', { ...state, players: [], hostId: '' });
+    }
+    socket.leave(roomCode);
+    broadcastRoomList();
+  });
+
   socket.on('disconnect', () => {
     console.log(`Socket disconnected: ${socket.id}`);
     const result = removeSocket(socket.id);

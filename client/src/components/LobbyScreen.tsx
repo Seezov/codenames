@@ -121,9 +121,17 @@ export default function LobbyScreen({ gameState, myPlayer }: Props) {
     : !hasBlueOp  ? 'Синій команді потрібен оперативник'
     : null;
 
+  function leaveRoom() {
+    sessionStorage.removeItem('codenames_session');
+    socket.emit('leaveRoom');
+  }
+
   return (
     <div className="lobby-room">
-      <h1>CODENAMES — Кімната: {gameState?.roomCode ?? roomCode}</h1>
+      <div className="lobby-room-header">
+        <h1>CODENAMES — Кімната: {gameState?.roomCode ?? roomCode}</h1>
+        <button className="leave-btn" onClick={leaveRoom}>← Вийти</button>
+      </div>
 
       <div className="lobby-teams">
         <div className="team-column red">

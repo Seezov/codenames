@@ -146,7 +146,24 @@ input:focus { border-color: var(--blue); }
   padding: 2rem;
   gap: 2rem;
 }
+.lobby-room-header {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+}
 .lobby-room h1 { font-size: 1.6rem; letter-spacing: 0.1em; }
+.leave-btn {
+  font-size: 0.8rem;
+  padding: 0.35rem 0.75rem;
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--muted);
+  border-radius: var(--radius);
+  cursor: pointer;
+  transition: border-color 0.15s, color 0.15s;
+  white-space: nowrap;
+}
+.leave-btn:hover { border-color: var(--text); color: var(--text); }
 
 .lobby-teams {
   display: flex;
