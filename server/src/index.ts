@@ -10,6 +10,7 @@ import {
   chooseTeam,
   endTurn,
   getOrCreateRoom,
+  getRoom,
   getRoomBySocket,
   giveClue,
   removeSocket,
@@ -31,6 +32,28 @@ const io = new Server<ClientToServerEvents, ServerToClientEvents>(httpServer, {
 function broadcast(roomCode: string, state: Parameters<ServerToClientEvents['gameState']>[0]): void {
   io.to(roomCode).emit('gameState', state);
 }
+
+// ── Turn timers ──────────────────────────────────────────────────────────────
+const turnTimers = new Map<string, ReturnType<typeof setTimeout>>();
+
+function clearTurnTimer(roomCode: string): void {
+  const t = turnTimers.get(roomCode);
+  if (t) clearTimeout(t);
+  turnTimers.delete(roomCode);
+}
+
+function scheduleTurnTimer(roomCode: string, durationMs: number): void {
+  clearTurnTimer(roomCode);
+  const t = setTimeout(() => {
+    const state = getRoom(roomCode);
+    if (!state || state.phase !== 'playing') return;
+    endTurn(state);
+    broadcast(roomCode, state);
+    scheduleTurnTimer(roomCode, 60_000);
+  }, durationMs);
+  turnTimers.set(roomCode, t);
+}
+// ────────────────────────────────────────────────────────────────────────────
 
 io.on('connection', socket => {
   console.log(`Socket connected: ${socket.id}`);
@@ -79,11 +102,13 @@ io.on('connection', socket => {
       return;
     }
     broadcast(state.roomCode, state);
+    scheduleTurnTimer(state.roomCode, 120_000);
   });
 
   socket.on('returnToLobby', () => {
     const state = getRoomBySocket(socket.id);
     if (!state) return;
+    clearTurnTimer(state.roomCode);
     returnToLobby(state);
     broadcast(state.roomCode, state);
   });
@@ -102,12 +127,19 @@ io.on('connection', socket => {
   socket.on('revealCard', ({ cardIndex }) => {
     const state = getRoomBySocket(socket.id);
     if (!state) return;
+    const prevTeam = state.currentTeam;
     const err = revealCard(state, socket.id, cardIndex);
     if (err) {
       socket.emit('error', err);
       return;
     }
     broadcast(state.roomCode, state);
+    if (state.phase === 'ended') {
+      clearTurnTimer(state.roomCode);
+    } else if (state.currentTeam !== prevTeam) {
+      // endTurn was called internally — reset to 60 s
+      scheduleTurnTimer(state.roomCode, 60_000);
+    }
   });
 
   socket.on('endTurn', () => {
@@ -117,6 +149,7 @@ io.on('connection', socket => {
     if (!player || player.role !== 'operative' || player.team !== state.currentTeam) return;
     endTurn(state);
     broadcast(state.roomCode, state);
+    scheduleTurnTimer(state.roomCode, 60_000);
   });
 
   socket.on('disconnect', () => {

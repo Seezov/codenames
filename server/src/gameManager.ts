@@ -25,6 +25,9 @@ export function createRoom(roomCode: string): GameState {
     winner: null,
     wordPool: [],
     log: [],
+    turnNumber: 0,
+    turnDuration: 0,
+    turnStartedAt: null,
   };
   rooms.set(roomCode, state);
   return state;
@@ -127,6 +130,9 @@ export function startGame(state: GameState): string | null {
   state.scores = { red: 0, blue: 0 };
   state.winner = null;
   state.log = [];
+  state.turnNumber = 1;
+  state.turnDuration = 120;
+  state.turnStartedAt = Date.now();
 
   rooms.set(state.roomCode, state);
   return null;
@@ -216,6 +222,9 @@ export function endTurn(state: GameState): void {
   state.currentTeam = state.currentTeam === 'red' ? 'blue' : 'red';
   state.clue = null;
   state.guessesLeft = 0;
+  state.turnNumber += 1;
+  state.turnDuration = 60;
+  state.turnStartedAt = Date.now();
   rooms.set(state.roomCode, state);
 }
 
@@ -227,5 +236,8 @@ export function returnToLobby(state: GameState): void {
   state.scores = { red: 0, blue: 0 };
   state.winner = null;
   state.log = [];
+  state.turnNumber = 0;
+  state.turnDuration = 0;
+  state.turnStartedAt = null;
   rooms.set(state.roomCode, state);
 }

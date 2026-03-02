@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import type { GameState, Player } from '@codenames/shared';
 import socket from '../socket';
 
@@ -11,6 +11,21 @@ interface Props {
 export default function CluePanel({ gameState, myPlayer, isMyTurn }: Props) {
   const [clueWord, setClueWord] = useState('');
   const [clueCount, setClueCount] = useState(1);
+  const [timeLeft, setTimeLeft] = useState(0);
+
+  useEffect(() => {
+    if (!gameState.turnStartedAt || gameState.phase !== 'playing') {
+      setTimeLeft(0);
+      return;
+    }
+    function tick() {
+      const elapsed = Math.floor((Date.now() - gameState.turnStartedAt!) / 1000);
+      setTimeLeft(Math.max(0, gameState.turnDuration - elapsed));
+    }
+    tick();
+    const id = setInterval(tick, 1000);
+    return () => clearInterval(id);
+  }, [gameState.turnStartedAt, gameState.turnDuration, gameState.phase]);
 
   const isSpymaster = myPlayer?.role === 'spymaster';
   const isOperative = myPlayer?.role === 'operative';
@@ -24,8 +39,17 @@ export default function CluePanel({ gameState, myPlayer, isMyTurn }: Props) {
     setClueCount(1);
   }
 
+  const mins = Math.floor(timeLeft / 60);
+  const secs = timeLeft % 60;
+  const timerStr = `${mins}:${String(secs).padStart(2, '0')}`;
+  const timerUrgent = timeLeft <= 30 && timeLeft > 0;
+
   return (
     <div className="clue-panel">
+      {gameState.phase === 'playing' && (
+        <span className={`turn-timer${timerUrgent ? ' urgent' : ''}`}>{timerStr}</span>
+      )}
+
       {gameState.clue ? (
         <div className="current-clue">
           <span className="clue-word">{gameState.clue.word}</span>

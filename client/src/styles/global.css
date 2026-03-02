@@ -239,6 +239,20 @@ input:focus { border-color: var(--blue); }
 .clue-input input[type="number"] { width: 60px; }
 .clue-waiting { color: var(--muted); font-size: 0.9rem; }
 
+.turn-timer {
+  font-size: 1.1rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--muted);
+  min-width: 44px;
+  text-align: center;
+}
+.turn-timer.urgent { color: #e63946; animation: pulse 1s ease-in-out infinite; }
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.5; }
+}
+
 /* ── Board ─────────────────────────────────────────────────── */
 .board {
   display: grid;

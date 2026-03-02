@@ -41,6 +41,9 @@ export interface GameState {
   winner: Team | null;
   wordPool: string[];
   log: LogEntry[];
+  turnNumber: number;
+  turnDuration: number;   // seconds
+  turnStartedAt: number | null; // Date.now() timestamp
 }
 
 export interface ClientToServerEvents {
