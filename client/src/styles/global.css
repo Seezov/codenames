@@ -122,6 +122,12 @@ input:focus { border-color: var(--blue); }
   border-radius: 4px;
   padding: 1px 5px;
 }
+.host-badge { font-size: 0.85rem; line-height: 1; }
+.player-color-dot {
+  width: 9px; height: 9px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
 
 .lobby-controls {
   display: flex;
@@ -231,46 +237,56 @@ input:focus { border-color: var(--blue); }
 /* ── Clue panel ────────────────────────────────────────────── */
 .clue-panel {
   width: 100%;
+  max-width: 760px;
   background: var(--surface);
   border-radius: var(--radius);
   border: 1px solid var(--border);
-  padding: 0.75rem 1.25rem;
+  padding: 1rem 1.5rem 0.9rem;
   display: flex;
+  flex-direction: column;
   align-items: center;
-  gap: 1rem;
-  min-height: 56px;
-}
-
-.current-clue { display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap; }
-.clue-word { font-size: 1.4rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; }
-.clue-count {
-  font-size: 1.2rem; font-weight: 700;
-  background: var(--card-bg);
-  border-radius: 50%;
-  width: 32px; height: 32px;
-  display: flex; align-items: center; justify-content: center;
-}
-.clue-meta { color: var(--muted); font-size: 0.8rem; }
-.guesses-left { color: var(--blue); font-size: 0.85rem; font-weight: 600; }
-.end-turn-btn { margin-left: auto; }
-
-.clue-input { display: flex; gap: 0.5rem; align-items: center; }
-.clue-input input[type="number"] { width: 60px; }
-.clue-waiting { color: var(--muted); font-size: 0.9rem; }
-
-.turn-timer {
-  font-size: 1.1rem;
-  font-weight: 700;
-  font-variant-numeric: tabular-nums;
-  color: var(--muted);
-  min-width: 44px;
+  gap: 0.5rem;
   text-align: center;
 }
-.turn-timer.urgent { color: #e63946; animation: pulse 1s ease-in-out infinite; }
+
+.clue-turn-label {
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.clue-turn-label.red  { color: var(--red); }
+.clue-turn-label.blue { color: var(--blue); }
+
+.clue-timer {
+  font-size: 2.8rem;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+  color: var(--text);
+}
+.clue-timer.urgent { color: #e63946; animation: pulse 1s ease-in-out infinite; }
 @keyframes pulse {
   0%, 100% { opacity: 1; }
   50%       { opacity: 0.5; }
 }
+
+.current-clue { display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap; justify-content: center; }
+.clue-word { font-size: 1.6rem; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; }
+.clue-count {
+  font-size: 1.3rem; font-weight: 700;
+  background: var(--card-bg);
+  border-radius: 50%;
+  width: 36px; height: 36px;
+  display: flex; align-items: center; justify-content: center;
+}
+.clue-meta { color: var(--muted); font-size: 0.8rem; }
+.end-turn-btn { }
+
+.clue-input { display: flex; gap: 0.5rem; align-items: center; justify-content: center; }
+.clue-input input[type="number"] { width: 60px; }
+.clue-waiting { color: var(--muted); font-size: 0.95rem; padding: 0.25rem 0; }
 
 /* ── Board ─────────────────────────────────────────────────── */
 .board {
@@ -360,9 +376,14 @@ input:focus { border-color: var(--blue); }
 }
 
 /* Spymaster hint overlay on unrevealed cards */
-.card.spy-hint.red    .card-front { border-color: var(--red);    box-shadow: 0 0 0 2px var(--red) inset, var(--shadow); }
-.card.spy-hint.blue   .card-front { border-color: var(--blue);   box-shadow: 0 0 0 2px var(--blue) inset, var(--shadow); }
-.card.spy-hint.assassin .card-front { border-color: #555; box-shadow: 0 0 0 2px #333 inset, var(--shadow); }
+.card.spy-hint.red    .card-front { border-color: var(--red);  box-shadow: 0 0 0 2px var(--red) inset, var(--shadow); }
+.card.spy-hint.blue   .card-front { border-color: var(--blue); box-shadow: 0 0 0 2px var(--blue) inset, var(--shadow); }
+/* Assassin — thick red glow to make it impossible to miss */
+.card.spy-hint.assassin .card-front {
+  border: 3px solid #cc0000;
+  box-shadow: 0 0 0 3px #cc0000 inset, 0 0 18px rgba(200,0,0,0.5), var(--shadow);
+  background: #1a0000;
+}
 
 /* ── Game log ──────────────────────────────────────────────── */
 .game-log {
@@ -415,36 +436,31 @@ input:focus { border-color: var(--blue); }
 .log-guess.result-neutral { border-color: var(--muted); color: var(--muted); }
 .log-guess.result-assassin { border-color: #555; color: var(--muted); }
 
-/* ── Win modal ─────────────────────────────────────────────── */
-.win-overlay {
-  position: fixed;
-  inset: 0;
-  background: rgba(0, 0, 0, 0.7);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 200;
-  backdrop-filter: blur(4px);
-}
-.win-modal {
+/* ── Win banner (inline below board) ──────────────────────── */
+.win-banner {
+  width: 100%;
+  max-width: 760px;
   background: var(--surface);
-  border: 1px solid var(--border);
   border-radius: var(--radius);
-  padding: 3rem 4rem;
+  border: 2px solid var(--border);
+  padding: 1.5rem 2rem;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 2rem;
-  box-shadow: 0 8px 40px rgba(0, 0, 0, 0.6);
+  gap: 1.25rem;
 }
+.win-banner.red  { border-color: var(--red); }
+.win-banner.blue { border-color: var(--blue); }
+
 .win-title {
-  font-size: 2.5rem;
+  font-size: 2rem;
   font-weight: 800;
-  letter-spacing: 0.12em;
+  letter-spacing: 0.1em;
   text-align: center;
+  color: var(--text);
 }
-.win-title.red  { color: var(--red); }
-.win-title.blue { color: var(--blue); }
+.win-banner.red  .win-title { color: var(--red); }
+.win-banner.blue .win-title { color: var(--blue); }
 
 .win-actions {
   display: flex;

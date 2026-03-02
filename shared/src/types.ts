@@ -47,6 +47,7 @@ export interface GameState {
   turnStartedAt: number | null; // Date.now() timestamp
   // playerId → cardIndex the player is currently voting for
   cardVotes: Record<string, number>;
+  hostId: string; // socket id of the room host (first to join)
 }
 
 export interface ClientToServerEvents {

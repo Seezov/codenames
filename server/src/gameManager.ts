@@ -78,6 +78,7 @@ export function createRoom(roomCode: string): GameState {
     turnDuration: 0,
     turnStartedAt: null,
     cardVotes: {},
+    hostId: '',
   };
   rooms.set(roomCode, state);
   return state;
@@ -117,6 +118,11 @@ export function removeSocket(socketId: string): { roomCode: string; state: GameS
     return undefined;
   }
 
+  // Transfer host if the host left
+  if (state.hostId === socketId) {
+    state.hostId = state.players[0].id;
+  }
+
   rooms.set(roomCode, state);
   return { roomCode, state };
 }
@@ -127,6 +133,8 @@ export function addPlayer(state: GameState, player: Omit<Player, 'color'>): void
     const usedColors = new Set(state.players.map(p => p.color));
     const color = PLAYER_COLORS.find(c => !usedColors.has(c)) ?? PLAYER_COLORS[state.players.length % PLAYER_COLORS.length];
     state.players.push({ ...player, color });
+    // First player to join becomes host
+    if (state.players.length === 1) state.hostId = player.id;
   }
   rooms.set(state.roomCode, state);
 }
