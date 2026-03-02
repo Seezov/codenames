@@ -96,6 +96,13 @@ export function setWordPool(state: GameState, words: string[]): void {
 export function startGame(state: GameState): string | null {
   if (state.wordPool.length < 25) return 'Need at least 25 words in the word pool.';
 
+  const hasRedSpy  = state.players.some(p => p.team === 'red'  && p.role === 'spymaster');
+  const hasRedOp   = state.players.some(p => p.team === 'red'  && p.role === 'operative');
+  const hasBlueSpy = state.players.some(p => p.team === 'blue' && p.role === 'spymaster');
+  const hasBlueOp  = state.players.some(p => p.team === 'blue' && p.role === 'operative');
+  if (!hasRedSpy || !hasRedOp)   return 'Red team needs at least 1 spymaster and 1 operative.';
+  if (!hasBlueSpy || !hasBlueOp) return 'Blue team needs at least 1 spymaster and 1 operative.';
+
   const words = shuffle(state.wordPool).slice(0, 25);
 
   // Red goes first → 9 red cards; blue gets 8; 1 assassin; 7 neutral

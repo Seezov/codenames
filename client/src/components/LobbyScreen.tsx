@@ -70,6 +70,19 @@ export default function LobbyScreen({ gameState, myPlayer }: Props) {
   const bluePlayers = gameState?.players.filter(p => p.team === 'blue') ?? [];
   const hasWords = (gameState?.wordPool.length ?? 0) >= 25;
 
+  const hasRedSpy  = redPlayers.some(p => p.role === 'spymaster');
+  const hasRedOp   = redPlayers.some(p => p.role === 'operative');
+  const hasBlueSpy = bluePlayers.some(p => p.role === 'spymaster');
+  const hasBlueOp  = bluePlayers.some(p => p.role === 'operative');
+  const teamsReady = hasRedSpy && hasRedOp && hasBlueSpy && hasBlueOp;
+
+  const startHint = !hasWords ? 'Load a word list first'
+    : !hasRedSpy  ? 'Red team needs a spymaster'
+    : !hasRedOp   ? 'Red team needs an operative'
+    : !hasBlueSpy ? 'Blue team needs a spymaster'
+    : !hasBlueOp  ? 'Blue team needs an operative'
+    : null;
+
   return (
     <div className="lobby-room">
       <h1>CODENAMES — Room: {gameState?.roomCode ?? roomCode}</h1>
@@ -136,9 +149,10 @@ export default function LobbyScreen({ gameState, myPlayer }: Props) {
           )}
         </div>
 
+        {startHint && <span className="start-hint">{startHint}</span>}
         <button
           className="start-btn"
-          disabled={!hasWords}
+          disabled={!hasWords || !teamsReady}
           onClick={() => socket.emit('startGame')}
         >
           Start Game

@@ -132,6 +132,11 @@ input:focus { border-color: var(--blue); }
 .control-group { display: flex; align-items: center; gap: 0.5rem; }
 .control-group span { color: var(--muted); font-size: 0.85rem; min-width: 40px; }
 
+.start-hint {
+  font-size: 0.8rem;
+  color: var(--muted);
+}
+
 .start-btn {
   margin-top: 0.5rem;
   padding: 0.65rem 2.5rem;
