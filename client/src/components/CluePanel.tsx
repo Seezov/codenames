@@ -39,6 +39,13 @@ export default function CluePanel({ gameState, myPlayer, isMyTurn }: Props) {
     setClueCount(1);
   }
 
+  // Auto-submit 1 second before timer expires so the clue beats the server's endTurn
+  useEffect(() => {
+    if (timeLeft === 1 && canGiveClue && clueWord.trim()) {
+      submitClue();
+    }
+  }, [timeLeft]); // eslint-disable-line react-hooks/exhaustive-deps
+
   const mins = Math.floor(timeLeft / 60);
   const secs = timeLeft % 60;
   const timerStr = `${mins}:${String(secs).padStart(2, '0')}`;

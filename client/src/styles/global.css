@@ -376,8 +376,18 @@ input:focus { border-color: var(--blue); }
 }
 
 /* Spymaster hint overlay on unrevealed cards */
-.card.spy-hint.red    .card-front { border-color: var(--red);  box-shadow: 0 0 0 2px var(--red) inset, var(--shadow); }
-.card.spy-hint.blue   .card-front { border-color: var(--blue); box-shadow: 0 0 0 2px var(--blue) inset, var(--shadow); }
+.card.spy-hint.red .card-front {
+  border: 3px solid var(--red);
+  box-shadow: 0 0 0 3px var(--red) inset, 0 0 10px rgba(230,57,70,0.35), var(--shadow);
+}
+.card.spy-hint.blue .card-front {
+  border: 3px solid #6ab4e8;
+  box-shadow: 0 0 0 3px #6ab4e8 inset, 0 0 12px rgba(106,180,232,0.45), var(--shadow);
+}
+.card.spy-hint.neutral .card-front {
+  border: 3px solid #888;
+  box-shadow: 0 0 0 3px #888 inset, var(--shadow);
+}
 /* Assassin — thick green glow to make it impossible to miss */
 .card.spy-hint.assassin .card-front {
   border: 3px solid #00cc44;
@@ -405,8 +415,6 @@ input:focus { border-color: var(--blue); }
   display: flex;
   flex-direction: column;
   gap: 2px;
-  max-height: 280px;
-  overflow-y: auto;
 }
 .log-clue {
   display: flex;
