@@ -9,7 +9,7 @@ export default function WinModal({ winner }: Props) {
   return (
     <div className={`win-banner ${winner}`}>
       <div className="win-title">
-        {winner === 'red' ? '🔴' : '🔵'} {winner.toUpperCase()} ПЕРЕМОГЛИ!
+        {winner === 'red' ? '🔴 ЧЕРВОНІ' : '🔵 СИНІ'} ПЕРЕМОГЛИ!
       </div>
       <div className="win-actions">
         <button className="win-btn new-game" onClick={() => socket.emit('startGame')}>

@@ -160,17 +160,17 @@ export function addPlayer(state: GameState, player: Omit<Player, 'color'>): void
 
 export function chooseTeam(state: GameState, playerId: string, team: Team): string | null {
   const player = state.players.find(p => p.id === playerId);
-  if (!player) return 'Player not found.';
+  if (!player) return 'Гравця не знайдено.';
   if (player.team === team) return null;
 
   if (state.phase === 'playing') {
     // Ensure old team keeps spy + op after this player leaves
     const remaining = state.players.filter(p => p.team === player.team && p.id !== playerId);
-    if (!remaining.some(p => p.role === 'spymaster')) return 'Your team would have no spymaster left.';
-    if (!remaining.some(p => p.role === 'operative')) return 'Your team would have no operative left.';
+    if (!remaining.some(p => p.role === 'spymaster')) return 'У вашій команді не залишиться шпигуна.';
+    if (!remaining.some(p => p.role === 'operative')) return 'У вашій команді не залишиться оперативника.';
     // Spymaster cannot join a team that already has one
     if (player.role === 'spymaster' && state.players.some(p => p.team === team && p.role === 'spymaster')) {
-      return 'That team already has a spymaster.';
+      return 'У тій команді вже є шпигун.';
     }
   }
 
@@ -182,12 +182,12 @@ export function chooseTeam(state: GameState, playerId: string, team: Team): stri
 
 export function chooseRole(state: GameState, playerId: string, role: Role): string | null {
   const player = state.players.find(p => p.id === playerId);
-  if (!player) return 'Player not found.';
+  if (!player) return 'Гравця не знайдено.';
   if (role === 'spymaster') {
     const teamAlreadyHasSpy = state.players.some(
       p => p.team === player.team && p.role === 'spymaster' && p.id !== playerId
     );
-    if (teamAlreadyHasSpy) return 'Your team already has a spymaster.';
+    if (teamAlreadyHasSpy) return 'У вашій команді вже є шпигун.';
   }
   player.role = role;
   rooms.set(state.roomCode, state);
@@ -200,14 +200,14 @@ export function setWordPool(state: GameState, words: string[]): void {
 }
 
 export function startGame(state: GameState): string | null {
-  if (state.wordPool.length < 25) return 'Need at least 25 words in the word pool.';
+  if (state.wordPool.length < 25) return 'Потрібно щонайменше 25 слів у пулі.';
 
   const hasRedSpy  = state.players.some(p => p.team === 'red'  && p.role === 'spymaster');
   const hasRedOp   = state.players.some(p => p.team === 'red'  && p.role === 'operative');
   const hasBlueSpy = state.players.some(p => p.team === 'blue' && p.role === 'spymaster');
   const hasBlueOp  = state.players.some(p => p.team === 'blue' && p.role === 'operative');
-  if (!hasRedSpy || !hasRedOp)   return 'Red team needs at least 1 spymaster and 1 operative.';
-  if (!hasBlueSpy || !hasBlueOp) return 'Blue team needs at least 1 spymaster and 1 operative.';
+  if (!hasRedSpy || !hasRedOp)   return 'Червоній команді потрібен шпигун та оперативник.';
+  if (!hasBlueSpy || !hasBlueOp) return 'Синій команді потрібен шпигун та оперативник.';
 
   const words = shuffle(state.wordPool).slice(0, 25);
 
@@ -249,16 +249,16 @@ export function giveClue(
   count: number
 ): string | null {
   const player = state.players.find(p => p.id === playerId);
-  if (!player) return 'Player not found.';
-  if (player.role !== 'spymaster') return 'Only the spymaster can give clues.';
-  if (player.team !== state.currentTeam) return 'It is not your team\'s turn.';
-  if (state.clue) return 'A clue has already been given this turn.';
+  if (!player) return 'Гравця не знайдено.';
+  if (player.role !== 'spymaster') return 'Тільки шпигун може давати підказки.';
+  if (player.team !== state.currentTeam) return 'Зараз не хід вашої команди.';
+  if (state.clue) return 'Підказку вже дано цього ходу.';
 
   const clueWordLower = word.toLowerCase();
   const boardWordMatch = state.board.some(
     c => !c.revealed && c.word.toLowerCase() === clueWordLower
   );
-  if (boardWordMatch) return 'Clue cannot be a word on the board.';
+  if (boardWordMatch) return 'Підказка не може бути словом на дошці.';
 
   state.clue = { word, count, givenBy: player.name };
   state.guessesLeft = count + 1;
@@ -278,14 +278,14 @@ export function voteCard(
   cardIndex: number
 ): { error: string | null; result: RevealResult | null } {
   const player = state.players.find(p => p.id === playerId);
-  if (!player) return { error: 'Player not found.', result: null };
-  if (player.role !== 'operative') return { error: 'Only operatives can vote.', result: null };
-  if (player.team !== state.currentTeam) return { error: 'It is not your team\'s turn.', result: null };
-  if (!state.clue) return { error: 'Wait for the spymaster to give a clue.', result: null };
-  if (state.phase !== 'playing') return { error: 'Game not in progress.', result: null };
+  if (!player) return { error: 'Гравця не знайдено.', result: null };
+  if (player.role !== 'operative') return { error: 'Тільки оперативники можуть голосувати.', result: null };
+  if (player.team !== state.currentTeam) return { error: 'Зараз не хід вашої команди.', result: null };
+  if (!state.clue) return { error: 'Зачекайте на підказку від шпигуна.', result: null };
+  if (state.phase !== 'playing') return { error: 'Гра не розпочата.', result: null };
 
   const card = state.board[cardIndex];
-  if (!card || card.revealed) return { error: 'Invalid card.', result: null };
+  if (!card || card.revealed) return { error: 'Недійсна картка.', result: null };
 
   // Toggle: clicking your current vote deselects it
   if (state.cardVotes[playerId] === cardIndex) {

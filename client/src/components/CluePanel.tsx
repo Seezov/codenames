@@ -51,8 +51,7 @@ export default function CluePanel({ gameState, myPlayer, isMyTurn }: Props) {
     <div className="clue-panel">
       {/* Turn + phase label */}
       <div className={`clue-turn-label ${teamColor}`}>
-        {teamColor === 'red' ? '🔴' : '🔵'}{' '}
-        {gameState.currentTeam.toUpperCase()} TEAM —{' '}
+        {teamColor === 'red' ? '🔴 ЧЕРВОНІ' : '🔵 СИНІ'}{' '}—{' '}
         {phase === 'clue' ? 'ПІДКАЗКА' : 'ВІДГАДУВАННЯ'}
       </div>
 

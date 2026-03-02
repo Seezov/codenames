@@ -20,7 +20,7 @@ export default function TeamSidebar({ team, players, myPlayer, score, isActive, 
   return (
     <aside className={`team-sidebar ${team} ${isActive ? 'active' : ''}`}>
       <div className="sidebar-header">
-        <span className="team-label">{team.toUpperCase()}</span>
+        <span className="team-label">{team === 'red' ? 'ЧЕРВОНА' : 'СИНЯ'}</span>
         <span className="score">{score} / {total}</span>
       </div>
 
@@ -29,7 +29,7 @@ export default function TeamSidebar({ team, players, myPlayer, score, isActive, 
           className={`join-team-btn ${team}`}
           onClick={() => socket.emit('chooseTeam', { team })}
         >
-          Join
+          Приєднатися
         </button>
       )}
 
@@ -38,7 +38,7 @@ export default function TeamSidebar({ team, players, myPlayer, score, isActive, 
           <li key={p.id} className="player-item">
             <span className="role-dot" style={{ background: '#f4d03f' }} />
             <span className="player-name">{p.name}</span>
-            <span className="role-label">SPY</span>
+            <span className="role-label">ШПИ</span>
           </li>
         ))}
         {spymasters.length > 0 && operatives.length > 0 && (
@@ -48,14 +48,14 @@ export default function TeamSidebar({ team, players, myPlayer, score, isActive, 
           <li key={p.id} className="player-item">
             <span className="role-dot" style={{ background: p.color }} />
             <span className="player-name">{p.name}</span>
-            <span className="role-label">OP</span>
+            <span className="role-label">ОП</span>
           </li>
         ))}
       </ul>
 
       {log && (
         <div className="game-log">
-          <div className="game-log-title">HISTORY</div>
+          <div className="game-log-title">ЖУРНАЛ</div>
           <ul className="log-list">
             {log.map((entry, i) =>
               entry.type === 'clue' ? (
