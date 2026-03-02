@@ -12,7 +12,7 @@
   --blue:      #457b9d;
   --blue-dark: #2b4f6b;
   --neutral:   #3a3a5c;
-  --assassin:  #111120;
+  --assassin:  #0a1f0a;
 
   --radius:    10px;
   --shadow:    0 4px 16px rgba(0,0,0,0.4);
@@ -341,7 +341,7 @@ input:focus { border-color: var(--blue); }
 .card.revealed.red    .card-back { background: var(--red);      border-color: var(--red-dark); }
 .card.revealed.blue   .card-back { background: var(--blue);     border-color: var(--blue-dark); }
 .card.revealed.neutral .card-back { background: var(--neutral); border-color: var(--neutral); }
-.card.revealed.assassin .card-back { background: var(--assassin); border-color: #333; }
+.card.revealed.assassin .card-back { background: var(--assassin); border-color: #1a5c1a; }
 
 .card-word {
   font-size: clamp(0.65rem, 1.4vw, 0.9rem);
@@ -378,11 +378,11 @@ input:focus { border-color: var(--blue); }
 /* Spymaster hint overlay on unrevealed cards */
 .card.spy-hint.red    .card-front { border-color: var(--red);  box-shadow: 0 0 0 2px var(--red) inset, var(--shadow); }
 .card.spy-hint.blue   .card-front { border-color: var(--blue); box-shadow: 0 0 0 2px var(--blue) inset, var(--shadow); }
-/* Assassin — thick red glow to make it impossible to miss */
+/* Assassin — thick green glow to make it impossible to miss */
 .card.spy-hint.assassin .card-front {
-  border: 3px solid #cc0000;
-  box-shadow: 0 0 0 3px #cc0000 inset, 0 0 18px rgba(200,0,0,0.5), var(--shadow);
-  background: #1a0000;
+  border: 3px solid #00cc44;
+  box-shadow: 0 0 0 3px #00cc44 inset, 0 0 18px rgba(0,200,60,0.5), var(--shadow);
+  background: #0a1f0a;
 }
 
 /* ── Game log ──────────────────────────────────────────────── */

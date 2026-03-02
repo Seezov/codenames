@@ -9,7 +9,7 @@ interface Props {
 }
 
 export default function Board({ gameState, myPlayer, isMyTurn }: Props) {
-  const isSpymaster = myPlayer?.role === 'spymaster';
+  const isSpymaster = myPlayer?.role === 'spymaster' || gameState.phase === 'ended';
   const canVote = isMyTurn && myPlayer?.role === 'operative' && !!gameState.clue && gameState.guessesLeft > 0;
 
   function handleVote(index: number) {
