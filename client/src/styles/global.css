@@ -318,6 +318,28 @@ input:focus { border-color: var(--blue); }
   pointer-events: none;
 }
 
+/* Vote highlight */
+.card.my-vote .card-front { box-shadow: 0 0 0 2px #fff inset, var(--shadow); }
+
+/* Vote dots on cards */
+.card-front {
+  flex-direction: column;
+  gap: 4px;
+}
+.card-votes {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+  justify-content: center;
+  pointer-events: none;
+}
+.vote-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
 /* Spymaster hint overlay on unrevealed cards */
 .card.spy-hint.red    .card-front { border-color: var(--red);    box-shadow: 0 0 0 2px var(--red) inset, var(--shadow); }
 .card.spy-hint.blue   .card-front { border-color: var(--blue);   box-shadow: 0 0 0 2px var(--blue) inset, var(--shadow); }

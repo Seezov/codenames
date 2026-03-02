@@ -19,7 +19,10 @@ export default function TeamSidebar({ team, players, score, isActive, total, log
       <ul className="player-list">
         {players.map(p => (
           <li key={p.id} className="player-item">
-            <span className={`role-dot ${p.role}`} />
+            <span
+              className="role-dot"
+              style={{ background: p.role === 'spymaster' ? '#f4d03f' : p.color }}
+            />
             <span className="player-name">{p.name}</span>
             <span className="role-label">{p.role === 'spymaster' ? 'SPY' : 'OP'}</span>
           </li>

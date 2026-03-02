@@ -10,25 +10,30 @@ interface Props {
 
 export default function Board({ gameState, myPlayer, isMyTurn }: Props) {
   const isSpymaster = myPlayer?.role === 'spymaster';
-  const canGuess = isMyTurn && myPlayer?.role === 'operative' && !!gameState.clue && gameState.guessesLeft > 0;
+  const canVote = isMyTurn && myPlayer?.role === 'operative' && !!gameState.clue && gameState.guessesLeft > 0;
 
-  function handleReveal(index: number) {
-    if (!canGuess) return;
-    socket.emit('revealCard', { cardIndex: index });
+  function handleVote(index: number) {
+    if (!canVote) return;
+    socket.emit('voteCard', { cardIndex: index });
   }
 
   return (
     <div className="board">
-      {gameState.board.map((card, i) => (
-        <CardTile
-          key={i}
-          card={card}
-          index={i}
-          isSpymaster={isSpymaster}
-          canGuess={canGuess}
-          onReveal={handleReveal}
-        />
-      ))}
+      {gameState.board.map((card, i) => {
+        const voters = gameState.players.filter(p => gameState.cardVotes[p.id] === i);
+        return (
+          <CardTile
+            key={i}
+            card={card}
+            index={i}
+            isSpymaster={isSpymaster}
+            canVote={canVote}
+            myVote={myPlayer ? gameState.cardVotes[myPlayer.id] === i : false}
+            voters={voters}
+            onVote={handleVote}
+          />
+        );
+      })}
     </div>
   );
 }

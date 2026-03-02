@@ -15,10 +15,10 @@ import {
   giveClue,
   removeSocket,
   returnToLobby,
-  revealCard,
   setSocketRoom,
   setWordPool,
   startGame,
+  voteCard,
 } from './gameManager';
 
 const app = express();
@@ -34,6 +34,7 @@ function broadcast(roomCode: string, state: Parameters<ServerToClientEvents['gam
 }
 
 // ── Turn timers ──────────────────────────────────────────────────────────────
+// Reads turnStartedAt + turnDuration from state to compute remaining ms.
 const turnTimers = new Map<string, ReturnType<typeof setTimeout>>();
 
 function clearTurnTimer(roomCode: string): void {
@@ -42,15 +43,22 @@ function clearTurnTimer(roomCode: string): void {
   turnTimers.delete(roomCode);
 }
 
-function scheduleTurnTimer(roomCode: string, durationMs: number): void {
+function scheduleTurnTimer(roomCode: string): void {
   clearTurnTimer(roomCode);
+  const state = getRoom(roomCode);
+  if (!state || state.phase !== 'playing' || !state.turnStartedAt) return;
+
+  const elapsedMs    = Date.now() - state.turnStartedAt;
+  const remainingMs  = Math.max(500, state.turnDuration * 1000 - elapsedMs);
+
   const t = setTimeout(() => {
-    const state = getRoom(roomCode);
-    if (!state || state.phase !== 'playing') return;
-    endTurn(state);
-    broadcast(roomCode, state);
-    scheduleTurnTimer(roomCode, 60_000);
-  }, durationMs);
+    const s = getRoom(roomCode);
+    if (!s || s.phase !== 'playing') return;
+    endTurn(s);
+    broadcast(roomCode, s);
+    scheduleTurnTimer(roomCode); // next clue phase
+  }, remainingMs);
+
   turnTimers.set(roomCode, t);
 }
 // ────────────────────────────────────────────────────────────────────────────
@@ -60,13 +68,12 @@ io.on('connection', socket => {
 
   socket.on('joinRoom', ({ roomCode, playerName }) => {
     const state = getOrCreateRoom(roomCode);
-    const player = {
+    addPlayer(state, {
       id: socket.id,
       name: playerName,
-      team: 'red' as const,
-      role: 'operative' as const,
-    };
-    addPlayer(state, player);
+      team: 'red',
+      role: 'operative',
+    });
     setSocketRoom(socket.id, roomCode);
     socket.join(roomCode);
     broadcast(roomCode, state);
@@ -97,12 +104,9 @@ io.on('connection', socket => {
     const state = getRoomBySocket(socket.id);
     if (!state) return;
     const err = startGame(state);
-    if (err) {
-      socket.emit('error', err);
-      return;
-    }
+    if (err) { socket.emit('error', err); return; }
     broadcast(state.roomCode, state);
-    scheduleTurnTimer(state.roomCode, 120_000);
+    scheduleTurnTimer(state.roomCode);
   });
 
   socket.on('returnToLobby', () => {
@@ -117,29 +121,29 @@ io.on('connection', socket => {
     const state = getRoomBySocket(socket.id);
     if (!state) return;
     const err = giveClue(state, socket.id, word, count);
-    if (err) {
-      socket.emit('error', err);
-      return;
-    }
+    if (err) { socket.emit('error', err); return; }
     broadcast(state.roomCode, state);
+    // Switch to guess-phase timer (1 min)
+    scheduleTurnTimer(state.roomCode);
   });
 
-  socket.on('revealCard', ({ cardIndex }) => {
+  socket.on('voteCard', ({ cardIndex }) => {
     const state = getRoomBySocket(socket.id);
     if (!state) return;
-    const prevTeam = state.currentTeam;
-    const err = revealCard(state, socket.id, cardIndex);
-    if (err) {
-      socket.emit('error', err);
-      return;
-    }
+    const { error, result } = voteCard(state, socket.id, cardIndex);
+    if (error) { socket.emit('error', error); return; }
     broadcast(state.roomCode, state);
-    if (state.phase === 'ended') {
+
+    if (result === 'game_ended') {
       clearTurnTimer(state.roomCode);
-    } else if (state.currentTeam !== prevTeam) {
-      // endTurn was called internally — reset to 60 s
-      scheduleTurnTimer(state.roomCode, 60_000);
+    } else if (result === 'turn_ended') {
+      // endTurn was called inside voteCard → new clue phase timer
+      scheduleTurnTimer(state.roomCode);
+    } else if (result === 'correct') {
+      // +15 s was already applied in state; reschedule with new remaining
+      scheduleTurnTimer(state.roomCode);
     }
+    // result === null → just a vote placed, no card revealed yet
   });
 
   socket.on('endTurn', () => {
@@ -149,7 +153,7 @@ io.on('connection', socket => {
     if (!player || player.role !== 'operative' || player.team !== state.currentTeam) return;
     endTurn(state);
     broadcast(state.roomCode, state);
-    scheduleTurnTimer(state.roomCode, 60_000);
+    scheduleTurnTimer(state.roomCode);
   });
 
   socket.on('disconnect', () => {

@@ -13,6 +13,7 @@ export interface Player {
   name: string;
   team: Team;
   role: Role;
+  color: string; // unique personal color (hex)
 }
 
 export interface Clue {
@@ -44,6 +45,8 @@ export interface GameState {
   turnNumber: number;
   turnDuration: number;   // seconds
   turnStartedAt: number | null; // Date.now() timestamp
+  // playerId → cardIndex the player is currently voting for
+  cardVotes: Record<string, number>;
 }
 
 export interface ClientToServerEvents {
@@ -54,7 +57,7 @@ export interface ClientToServerEvents {
   startGame: () => void;
   returnToLobby: () => void;
   giveClue: (payload: { word: string; count: number }) => void;
-  revealCard: (payload: { cardIndex: number }) => void;
+  voteCard: (payload: { cardIndex: number }) => void;
   endTurn: () => void;
 }
 
