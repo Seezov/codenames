@@ -28,6 +28,8 @@ app.use(cors());
 const httpServer = createServer(app);
 const io = new Server<ClientToServerEvents, ServerToClientEvents>(httpServer, {
   cors: { origin: '*' },
+  pingTimeout: 60000,   // wait 60 s before declaring a client disconnected
+  pingInterval: 25000,  // send heartbeat every 25 s (default)
 });
 
 function broadcast(roomCode: string, state: Parameters<ServerToClientEvents['gameState']>[0]): void {

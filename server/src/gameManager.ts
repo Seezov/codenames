@@ -128,14 +128,33 @@ export function removeSocket(socketId: string): { roomCode: string; state: GameS
 }
 
 export function addPlayer(state: GameState, player: Omit<Player, 'color'>): void {
-  const existing = state.players.find(p => p.id === player.id);
-  if (!existing) {
-    const usedColors = new Set(state.players.map(p => p.color));
-    const color = PLAYER_COLORS.find(c => !usedColors.has(c)) ?? PLAYER_COLORS[state.players.length % PLAYER_COLORS.length];
-    state.players.push({ ...player, color });
-    // First player to join becomes host
-    if (state.players.length === 1) state.hostId = player.id;
+  // Already in room with same socket (shouldn't happen normally)
+  if (state.players.find(p => p.id === player.id)) {
+    rooms.set(state.roomCode, state);
+    return;
   }
+
+  // Reconnecting player: same name + old socket no longer active
+  const reconnecting = state.players.find(p => p.name === player.name && !socketToRoom.has(p.id));
+  if (reconnecting) {
+    const oldId = reconnecting.id;
+    reconnecting.id = player.id;
+    if (state.hostId === oldId) state.hostId = player.id;
+    // Transfer any pending vote to new socket ID
+    if (state.cardVotes[oldId] !== undefined) {
+      state.cardVotes[player.id] = state.cardVotes[oldId];
+      delete state.cardVotes[oldId];
+    }
+    rooms.set(state.roomCode, state);
+    return;
+  }
+
+  // New player
+  const usedColors = new Set(state.players.map(p => p.color));
+  const color = PLAYER_COLORS.find(c => !usedColors.has(c)) ?? PLAYER_COLORS[state.players.length % PLAYER_COLORS.length];
+  state.players.push({ ...player, color });
+  // First player to join becomes host
+  if (state.players.length === 1) state.hostId = player.id;
   rooms.set(state.roomCode, state);
 }
 
