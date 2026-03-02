@@ -1,0 +1,409 @@
+/* ── Design tokens ─────────────────────────────────────────── */
+:root {
+  --bg:        #0f0f1a;
+  --surface:   #1a1a2e;
+  --card-bg:   #16213e;
+  --border:    #2a2a4a;
+  --text:      #e8e8f0;
+  --muted:     #6b6b8a;
+
+  --red:       #e63946;
+  --red-dark:  #a0222c;
+  --blue:      #457b9d;
+  --blue-dark: #2b4f6b;
+  --neutral:   #3a3a5c;
+  --assassin:  #111120;
+
+  --radius:    10px;
+  --shadow:    0 4px 16px rgba(0,0,0,0.4);
+}
+
+/* ── Reset ─────────────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Segoe UI', system-ui, sans-serif;
+  min-height: 100vh;
+}
+
+button {
+  cursor: pointer;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text);
+  border-radius: var(--radius);
+  padding: 0.4rem 0.9rem;
+  font-size: 0.85rem;
+  transition: background 0.15s, border-color 0.15s;
+}
+button:hover { background: var(--border); }
+button:disabled { opacity: 0.4; cursor: not-allowed; }
+button.active { border-color: var(--text); background: var(--border); }
+button.active.red  { border-color: var(--red);  color: var(--red); }
+button.active.blue { border-color: var(--blue); color: var(--blue); }
+
+input {
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  color: var(--text);
+  padding: 0.45rem 0.75rem;
+  font-size: 0.9rem;
+  outline: none;
+  transition: border-color 0.15s;
+}
+input:focus { border-color: var(--blue); }
+
+/* ── Error toast ───────────────────────────────────────────── */
+.error-toast {
+  position: fixed;
+  top: 1rem;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--red-dark);
+  color: #fff;
+  padding: 0.6rem 1.4rem;
+  border-radius: var(--radius);
+  z-index: 100;
+  font-size: 0.9rem;
+  box-shadow: var(--shadow);
+}
+
+/* ── Lobby: join ───────────────────────────────────────────── */
+.lobby-join {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  gap: 1rem;
+}
+.lobby-join h1 {
+  font-size: 3rem;
+  letter-spacing: 0.2em;
+  margin-bottom: 1rem;
+}
+.lobby-join input { width: 280px; }
+.lobby-join button { width: 280px; padding: 0.6rem; font-size: 1rem; }
+
+/* ── Lobby: room ───────────────────────────────────────────── */
+.lobby-room {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 2rem;
+  gap: 2rem;
+}
+.lobby-room h1 { font-size: 1.6rem; letter-spacing: 0.1em; }
+
+.lobby-teams {
+  display: flex;
+  gap: 3rem;
+}
+.team-column { min-width: 180px; }
+.team-column h2 { margin-bottom: 0.5rem; font-size: 1rem; text-transform: uppercase; letter-spacing: 0.08em; }
+.team-column.red h2 { color: var(--red); }
+.team-column.blue h2 { color: var(--blue); }
+
+.player-entry {
+  padding: 0.25rem 0;
+  font-size: 0.9rem;
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+.role-badge {
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  color: var(--muted);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 1px 5px;
+}
+
+.lobby-controls {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  align-items: center;
+}
+.control-group { display: flex; align-items: center; gap: 0.5rem; }
+.control-group span { color: var(--muted); font-size: 0.85rem; min-width: 40px; }
+
+.start-btn {
+  margin-top: 0.5rem;
+  padding: 0.65rem 2.5rem;
+  font-size: 1rem;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  background: var(--blue-dark);
+  border-color: var(--blue);
+  color: #fff;
+}
+.start-btn:hover:not(:disabled) { background: var(--blue); }
+
+/* ── Game screen ───────────────────────────────────────────── */
+.game-screen {
+  display: grid;
+  grid-template-columns: 200px 1fr 200px;
+  min-height: 100vh;
+  gap: 1rem;
+  padding: 1rem;
+}
+
+/* ── Sidebars ──────────────────────────────────────────────── */
+.team-sidebar {
+  background: var(--surface);
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  align-self: start;
+  transition: border-color 0.3s;
+}
+.team-sidebar.red  { border-top: 3px solid var(--red); }
+.team-sidebar.blue { border-top: 3px solid var(--blue); }
+.team-sidebar.active { box-shadow: 0 0 0 1px var(--muted); }
+
+.sidebar-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.team-label { font-weight: 700; letter-spacing: 0.1em; font-size: 0.9rem; }
+.team-sidebar.red  .team-label { color: var(--red); }
+.team-sidebar.blue .team-label { color: var(--blue); }
+.score { font-size: 1.2rem; font-weight: 700; }
+
+.player-list { list-style: none; display: flex; flex-direction: column; gap: 0.4rem; }
+.player-item {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.85rem;
+}
+.role-dot {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  background: var(--muted);
+  flex-shrink: 0;
+}
+.role-dot.spymaster { background: #f4d03f; }
+.player-name { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.role-label { font-size: 0.65rem; color: var(--muted); }
+
+/* ── Center ────────────────────────────────────────────────── */
+.game-center {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  align-items: center;
+}
+
+/* ── Clue panel ────────────────────────────────────────────── */
+.clue-panel {
+  width: 100%;
+  background: var(--surface);
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  padding: 0.75rem 1.25rem;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  min-height: 56px;
+}
+
+.current-clue { display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap; }
+.clue-word { font-size: 1.4rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; }
+.clue-count {
+  font-size: 1.2rem; font-weight: 700;
+  background: var(--card-bg);
+  border-radius: 50%;
+  width: 32px; height: 32px;
+  display: flex; align-items: center; justify-content: center;
+}
+.clue-meta { color: var(--muted); font-size: 0.8rem; }
+.guesses-left { color: var(--blue); font-size: 0.85rem; font-weight: 600; }
+.end-turn-btn { margin-left: auto; }
+
+.clue-input { display: flex; gap: 0.5rem; align-items: center; }
+.clue-input input[type="number"] { width: 60px; }
+.clue-waiting { color: var(--muted); font-size: 0.9rem; }
+
+/* ── Board ─────────────────────────────────────────────────── */
+.board {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 10px;
+  width: 100%;
+  max-width: 760px;
+}
+
+/* ── Card flip ─────────────────────────────────────────────── */
+.card {
+  perspective: 600px;
+  aspect-ratio: 3 / 2;
+  cursor: default;
+  border-radius: var(--radius);
+}
+.card.guessable { cursor: pointer; }
+.card.guessable:hover .card-inner { transform: rotateY(8deg); }
+
+.card-inner {
+  position: relative;
+  width: 100%; height: 100%;
+  transform-style: preserve-3d;
+  transition: transform 0.4s ease;
+  border-radius: var(--radius);
+}
+
+.card.revealed .card-inner { transform: rotateY(180deg); }
+
+.card-front, .card-back {
+  position: absolute;
+  inset: 0;
+  backface-visibility: hidden;
+  border-radius: var(--radius);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow);
+}
+
+/* Front face — unrevealed */
+.card-front {
+  background: var(--card-bg);
+}
+
+/* Back face — revealed */
+.card-back {
+  transform: rotateY(180deg);
+}
+.card.revealed.red    .card-back { background: var(--red);      border-color: var(--red-dark); }
+.card.revealed.blue   .card-back { background: var(--blue);     border-color: var(--blue-dark); }
+.card.revealed.neutral .card-back { background: var(--neutral); border-color: var(--neutral); }
+.card.revealed.assassin .card-back { background: var(--assassin); border-color: #333; }
+
+.card-word {
+  font-size: clamp(0.65rem, 1.4vw, 0.9rem);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  text-align: center;
+  padding: 0 0.3rem;
+  pointer-events: none;
+}
+
+/* Spymaster hint overlay on unrevealed cards */
+.card.spy-hint.red    .card-front { border-color: var(--red);    box-shadow: 0 0 0 2px var(--red) inset, var(--shadow); }
+.card.spy-hint.blue   .card-front { border-color: var(--blue);   box-shadow: 0 0 0 2px var(--blue) inset, var(--shadow); }
+.card.spy-hint.assassin .card-front { border-color: #555; box-shadow: 0 0 0 2px #333 inset, var(--shadow); }
+
+/* ── Game log ──────────────────────────────────────────────── */
+.game-log {
+  border-top: 1px solid var(--border);
+  padding-top: 0.6rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  min-height: 0;
+}
+.game-log-title {
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  color: var(--muted);
+}
+.log-list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  max-height: 280px;
+  overflow-y: auto;
+}
+.log-clue {
+  display: flex;
+  align-items: baseline;
+  gap: 0.35rem;
+  margin-top: 0.3rem;
+  font-size: 0.8rem;
+}
+.log-clue.red  { color: var(--red); }
+.log-clue.blue { color: var(--blue); }
+.log-clue-word { font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; }
+.log-clue-count { font-size: 0.7rem; opacity: 0.8; }
+
+.log-guess {
+  font-size: 0.75rem;
+  padding: 1px 6px;
+  border-radius: 4px;
+  margin-left: 0.6rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text);
+  background: var(--card-bg);
+  border-left: 2px solid var(--border);
+}
+.log-guess.result-red     { border-color: var(--red);  color: var(--red); }
+.log-guess.result-blue    { border-color: var(--blue); color: var(--blue); }
+.log-guess.result-neutral { border-color: var(--muted); color: var(--muted); }
+.log-guess.result-assassin { border-color: #555; color: var(--muted); }
+
+/* ── Win modal ─────────────────────────────────────────────── */
+.win-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 200;
+  backdrop-filter: blur(4px);
+}
+.win-modal {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 3rem 4rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2rem;
+  box-shadow: 0 8px 40px rgba(0, 0, 0, 0.6);
+}
+.win-title {
+  font-size: 2.5rem;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-align: center;
+}
+.win-title.red  { color: var(--red); }
+.win-title.blue { color: var(--blue); }
+
+.win-actions {
+  display: flex;
+  gap: 1rem;
+}
+.win-btn {
+  padding: 0.7rem 2rem;
+  font-size: 1rem;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+}
+.win-btn.new-game {
+  background: var(--blue-dark);
+  border-color: var(--blue);
+  color: #fff;
+}
+.win-btn.new-game:hover { background: var(--blue); }
+.win-btn.lobby {
+  background: var(--card-bg);
+  border-color: var(--border);
+}
+.win-btn.lobby:hover { background: var(--border); }
