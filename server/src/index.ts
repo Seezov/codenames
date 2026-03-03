@@ -5,7 +5,7 @@ import { createServer } from 'http';
 import path from 'path';
 import { Server } from 'socket.io';
 import type { ClientToServerEvents, ServerToClientEvents } from '@codenames/shared';
-import { loginUser, registerUser, saveGameResult } from './database';
+import { initDatabase, loginUser, registerUser, saveGameResult } from './database';
 import type { DbUser } from './database';
 import {
   addPlayer,
@@ -93,14 +93,14 @@ io.on('connection', socket => {
   console.log(`Socket connected: ${socket.id}`);
 
   // ── Auth ─────────────────────────────────────────────────────────────────
-  socket.on('register', ({ nickname, password }) => {
-    const result = registerUser(nickname, password);
+  socket.on('register', async ({ nickname, password }) => {
+    const result = await registerUser(nickname, password);
     if ('error' in result) { socket.emit('authResult', { error: result.error }); return; }
     socket.emit('authResult', authSuccess(socket.id, result.user));
   });
 
-  socket.on('login', ({ nickname, password }) => {
-    const result = loginUser(nickname, password);
+  socket.on('login', async ({ nickname, password }) => {
+    const result = await loginUser(nickname, password);
     if ('error' in result) { socket.emit('authResult', { error: result.error }); return; }
     socket.emit('authResult', authSuccess(socket.id, result.user));
   });
@@ -203,11 +203,12 @@ io.on('connection', socket => {
 
     if (result === 'game_ended') {
       clearTurnTimer(state.roomCode);
-      // Save game results for every authenticated player in the room
+      // Save game results for every authenticated player in the room (fire-and-forget)
       for (const player of state.players) {
         const user = socketToUser.get(player.id);
         if (user) {
-          saveGameResult(user.id, state.roomCode, player.team, player.role, player.team === state.winner);
+          saveGameResult(user.id, state.roomCode, player.team, player.role, player.team === state.winner)
+            .catch(err => console.error('saveGameResult failed:', err));
         }
       }
     } else if (result === 'turn_ended') {
@@ -258,6 +259,15 @@ if (process.env.NODE_ENV === 'production') {
 }
 
 const PORT = process.env.PORT ?? 3001;
-httpServer.listen(PORT, () => {
-  console.log(`Server running on http://localhost:${PORT}`);
-});
+
+// Initialise DB tables then start listening
+initDatabase()
+  .then(() => {
+    httpServer.listen(PORT, () => {
+      console.log(`Server running on http://localhost:${PORT}`);
+    });
+  })
+  .catch(err => {
+    console.error('Failed to initialise database:', err);
+    process.exit(1);
+  });

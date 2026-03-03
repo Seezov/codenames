@@ -1,44 +1,44 @@
-import Database from 'better-sqlite3';
+import { Pool } from 'pg';
 import bcrypt from 'bcryptjs';
-import fs from 'fs';
-import path from 'path';
 
-// DATA_DIR can be overridden via env var so Railway volumes work cleanly.
-// Default: <repo-root>/data  (../.. from server/dist/)
-const DATA_DIR = process.env.DATA_DIR ?? path.join(__dirname, '../../data');
-fs.mkdirSync(DATA_DIR, { recursive: true });
+// Railway injects DATABASE_URL automatically.
+// For local dev set it in a .env file or shell environment.
+const pool = new Pool({
+  connectionString: process.env.DATABASE_URL,
+  // Railway PostgreSQL requires SSL in production
+  ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false,
+});
 
-const db = new Database(path.join(DATA_DIR, 'codenames.db'));
-db.pragma('journal_mode = WAL'); // better concurrent read performance
+export async function initDatabase(): Promise<void> {
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS users (
+      id            SERIAL PRIMARY KEY,
+      nickname      TEXT   UNIQUE NOT NULL,
+      password_hash TEXT   NOT NULL,
+      created_at    TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    );
 
-db.exec(`
-  CREATE TABLE IF NOT EXISTS users (
-    id            INTEGER PRIMARY KEY AUTOINCREMENT,
-    nickname      TEXT    UNIQUE NOT NULL COLLATE NOCASE,
-    password_hash TEXT    NOT NULL,
-    created_at    INTEGER NOT NULL DEFAULT (unixepoch())
-  );
-
-  CREATE TABLE IF NOT EXISTS game_results (
-    id         INTEGER PRIMARY KEY AUTOINCREMENT,
-    user_id    INTEGER NOT NULL REFERENCES users(id),
-    room_code  TEXT    NOT NULL,
-    team       TEXT    NOT NULL,
-    role       TEXT    NOT NULL,
-    won        INTEGER NOT NULL DEFAULT 0,
-    played_at  INTEGER NOT NULL DEFAULT (unixepoch())
-  );
-`);
+    CREATE TABLE IF NOT EXISTS game_results (
+      id         SERIAL PRIMARY KEY,
+      user_id    INTEGER NOT NULL REFERENCES users(id),
+      room_code  TEXT    NOT NULL,
+      team       TEXT    NOT NULL,
+      role       TEXT    NOT NULL,
+      won        BOOLEAN NOT NULL DEFAULT FALSE,
+      played_at  TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    );
+  `);
+}
 
 export interface DbUser {
   id: number;
   nickname: string;
 }
 
-export function registerUser(
+export async function registerUser(
   nickname: string,
   password: string,
-): { user: DbUser } | { error: string } {
+): Promise<{ user: DbUser } | { error: string }> {
   const nick = nickname.trim();
   if (nick.length < 2 || nick.length > 20) {
     return { error: 'Нікнейм має бути від 2 до 20 символів.' };
@@ -46,38 +46,45 @@ export function registerUser(
   if (password.length < 4) {
     return { error: 'Пароль має бути щонайменше 4 символи.' };
   }
-  const existing = db.prepare('SELECT id FROM users WHERE nickname = ?').get(nick);
-  if (existing) return { error: 'Такий нікнейм вже зайнятий.' };
+
+  const existing = await pool.query(
+    'SELECT id FROM users WHERE LOWER(nickname) = LOWER($1)',
+    [nick],
+  );
+  if (existing.rows.length > 0) return { error: 'Такий нікнейм вже зайнятий.' };
 
   const hash = bcrypt.hashSync(password, 10);
-  const res = db
-    .prepare('INSERT INTO users (nickname, password_hash) VALUES (?, ?)')
-    .run(nick, hash);
-  return { user: { id: res.lastInsertRowid as number, nickname: nick } };
+  const res = await pool.query(
+    'INSERT INTO users (nickname, password_hash) VALUES ($1, $2) RETURNING id',
+    [nick, hash],
+  );
+  return { user: { id: res.rows[0].id as number, nickname: nick } };
 }
 
-export function loginUser(
+export async function loginUser(
   nickname: string,
   password: string,
-): { user: DbUser } | { error: string } {
-  const row = db
-    .prepare('SELECT id, nickname, password_hash FROM users WHERE nickname = ?')
-    .get(nickname.trim()) as { id: number; nickname: string; password_hash: string } | undefined;
-
+): Promise<{ user: DbUser } | { error: string }> {
+  const res = await pool.query(
+    'SELECT id, nickname, password_hash FROM users WHERE LOWER(nickname) = LOWER($1)',
+    [nickname.trim()],
+  );
+  const row = res.rows[0] as { id: number; nickname: string; password_hash: string } | undefined;
   if (!row || !bcrypt.compareSync(password, row.password_hash)) {
     return { error: 'Невірний нікнейм або пароль.' };
   }
   return { user: { id: row.id, nickname: row.nickname } };
 }
 
-export function saveGameResult(
+export async function saveGameResult(
   userId: number,
   roomCode: string,
   team: string,
   role: string,
   won: boolean,
-): void {
-  db.prepare(
-    'INSERT INTO game_results (user_id, room_code, team, role, won) VALUES (?, ?, ?, ?, ?)',
-  ).run(userId, roomCode, team, role, won ? 1 : 0);
+): Promise<void> {
+  await pool.query(
+    'INSERT INTO game_results (user_id, room_code, team, role, won) VALUES ($1, $2, $3, $4, $5)',
+    [userId, roomCode, team, role, won],
+  );
 }
