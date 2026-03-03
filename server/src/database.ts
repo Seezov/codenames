@@ -1,8 +1,11 @@
 import { Pool } from 'pg';
 import bcrypt from 'bcryptjs';
 
-// Railway injects DATABASE_URL automatically.
-// For local dev set it in a .env file or shell environment.
+if (!process.env.DATABASE_URL) {
+  console.error('DATABASE_URL is not set. Add a PostgreSQL database to your Railway project and link it to this service.');
+  process.exit(1);
+}
+
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
   // Railway PostgreSQL requires SSL in production
