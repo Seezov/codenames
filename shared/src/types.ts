@@ -74,6 +74,7 @@ export interface ClientToServerEvents {
   voteCard: (payload: { cardIndex: number }) => void;
   endTurn: () => void;
   getRooms: () => void;
+  getUsers: () => void;
   leaveRoom: () => void;
   register: (payload: { nickname: string; password: string }) => void;
   login: (payload: { nickname: string; password: string }) => void;
@@ -84,5 +85,6 @@ export interface ServerToClientEvents {
   gameState: (state: GameState) => void;
   error: (message: string) => void;
   roomList: (rooms: RoomInfo[]) => void;
+  userList: (users: Array<{ id: number; nickname: string }>) => void;
   authResult: (result: { user: AuthUser; token: string } | { error: string }) => void;
 }

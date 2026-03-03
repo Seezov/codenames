@@ -5,7 +5,7 @@ import { createServer } from 'http';
 import path from 'path';
 import { Server } from 'socket.io';
 import type { ClientToServerEvents, ServerToClientEvents } from '@codenames/shared';
-import { initDatabase, loginUser, registerUser, saveGameResult } from './database';
+import { getAllUsers, initDatabase, loginUser, registerUser, saveGameResult } from './database';
 import type { DbUser } from './database';
 import {
   addPlayer,
@@ -117,6 +117,11 @@ io.on('connection', socket => {
 
   socket.on('getRooms', () => {
     socket.emit('roomList', listRooms());
+  });
+
+  socket.on('getUsers', async () => {
+    const users = await getAllUsers();
+    socket.emit('userList', users);
   });
 
   socket.on('joinRoom', ({ roomCode, playerName }) => {

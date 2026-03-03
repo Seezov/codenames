@@ -79,6 +79,11 @@ export async function loginUser(
   return { user: { id: row.id, nickname: row.nickname } };
 }
 
+export async function getAllUsers(): Promise<Array<{ id: number; nickname: string }>> {
+  const res = await pool.query('SELECT id, nickname FROM users ORDER BY created_at DESC');
+  return res.rows as Array<{ id: number; nickname: string }>;
+}
+
 export async function saveGameResult(
   userId: number,
   roomCode: string,

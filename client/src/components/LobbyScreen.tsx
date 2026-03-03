@@ -14,6 +14,7 @@ export default function LobbyScreen({ gameState, myPlayer, authUser, onLogout }:
   const [name, setName]         = useState('');
   const [roomCode, setRoomCode] = useState('');
   const [rooms, setRooms]       = useState<RoomInfo[]>([]);
+  const [registeredUsers, setRegisteredUsers] = useState<Array<{ id: number; nickname: string }>>([]);
 
   // Auth form state
   const [authMode, setAuthMode]   = useState<'login' | 'register'>('login');
@@ -28,12 +29,17 @@ export default function LobbyScreen({ gameState, myPlayer, authUser, onLogout }:
     if (authUser) setName(authUser.nickname);
   }, [authUser?.nickname]);
 
-  // Fetch room list and keep it live while on the join screen
+  // Fetch room list and registered users while on the join screen
   useEffect(() => {
     if (myPlayer) return;
     socket.emit('getRooms');
+    socket.emit('getUsers');
     socket.on('roomList', setRooms);
-    return () => { socket.off('roomList', setRooms); };
+    socket.on('userList', setRegisteredUsers);
+    return () => {
+      socket.off('roomList', setRooms);
+      socket.off('userList', setRegisteredUsers);
+    };
   }, [myPlayer]);
 
   // Listen for auth errors from the server
@@ -89,7 +95,27 @@ export default function LobbyScreen({ gameState, myPlayer, authUser, onLogout }:
       phase === 'lobby' ? 'Лобі' : phase === 'playing' ? 'Грається' : 'Завершено';
 
     return (
-      <div className="lobby-join">
+      <div className="lobby-join-page">
+
+        {/* ── Left: registered users ──────────────────────────────────────── */}
+        <div className="users-panel">
+          <div className="users-panel-title">Гравці ({registeredUsers.length})</div>
+          {registeredUsers.length === 0 ? (
+            <div className="users-panel-empty">Немає зареєстрованих гравців</div>
+          ) : (
+            <ul className="users-list">
+              {registeredUsers.map(u => (
+                <li key={u.id} className="user-item">
+                  <span className="user-dot" />
+                  <span className="user-nick">{u.nickname}</span>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+
+        {/* ── Center: main join UI ─────────────────────────────────────────── */}
+        <div className="lobby-join">
         <h1>CODENAMES</h1>
 
         {/* ── Auth section ───────────────────────────────────────────────── */}
@@ -167,6 +193,7 @@ export default function LobbyScreen({ gameState, myPlayer, authUser, onLogout }:
             </ul>
           </div>
         )}
+        </div>
       </div>
     );
   }
