@@ -73,9 +73,9 @@ input:focus { border-color: var(--blue); }
 
 /* ── Lobby: join page wrapper ──────────────────────────────── */
 .lobby-join-page {
-  display: flex;
+  display: grid;
+  grid-template-columns: 200px 1fr 200px;
   align-items: flex-start;
-  justify-content: center;
   min-height: 100vh;
   gap: 2rem;
   padding: 2rem;
