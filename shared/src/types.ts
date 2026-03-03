@@ -50,6 +50,11 @@ export interface GameState {
   hostId: string; // socket id of the room host (first to join)
 }
 
+export interface AuthUser {
+  id: number;
+  nickname: string;
+}
+
 export interface RoomInfo {
   roomCode: string;
   playerCount: number;
@@ -70,10 +75,14 @@ export interface ClientToServerEvents {
   endTurn: () => void;
   getRooms: () => void;
   leaveRoom: () => void;
+  register: (payload: { nickname: string; password: string }) => void;
+  login: (payload: { nickname: string; password: string }) => void;
+  resumeSession: (payload: { token: string }) => void;
 }
 
 export interface ServerToClientEvents {
   gameState: (state: GameState) => void;
   error: (message: string) => void;
   roomList: (rooms: RoomInfo[]) => void;
+  authResult: (result: { user: AuthUser; token: string } | { error: string }) => void;
 }

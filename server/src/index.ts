@@ -1,9 +1,12 @@
 import cors from 'cors';
+import crypto from 'crypto';
 import express from 'express';
 import { createServer } from 'http';
 import path from 'path';
 import { Server } from 'socket.io';
 import type { ClientToServerEvents, ServerToClientEvents } from '@codenames/shared';
+import { loginUser, registerUser, saveGameResult } from './database';
+import type { DbUser } from './database';
 import {
   addPlayer,
   chooseRole,
@@ -41,8 +44,23 @@ function broadcastRoomList(): void {
   io.emit('roomList', listRooms());
 }
 
+// ── Auth sessions ─────────────────────────────────────────────────────────────
+const sessions     = new Map<string, DbUser>(); // token  → user
+const socketToUser = new Map<string, DbUser>(); // socket → user
+
+function generateToken(): string {
+  return crypto.randomBytes(32).toString('hex');
+}
+
+function authSuccess(socketId: string, user: DbUser): { user: DbUser; token: string } {
+  const token = generateToken();
+  sessions.set(token, user);
+  socketToUser.set(socketId, user);
+  return { user, token };
+}
+// ─────────────────────────────────────────────────────────────────────────────
+
 // ── Turn timers ──────────────────────────────────────────────────────────────
-// Reads turnStartedAt + turnDuration from state to compute remaining ms.
 const turnTimers = new Map<string, ReturnType<typeof setTimeout>>();
 
 function clearTurnTimer(roomCode: string): void {
@@ -56,23 +74,46 @@ function scheduleTurnTimer(roomCode: string): void {
   const state = getRoom(roomCode);
   if (!state || state.phase !== 'playing' || !state.turnStartedAt) return;
 
-  const elapsedMs    = Date.now() - state.turnStartedAt;
-  const remainingMs  = Math.max(500, state.turnDuration * 1000 - elapsedMs);
+  const elapsedMs   = Date.now() - state.turnStartedAt;
+  const remainingMs = Math.max(500, state.turnDuration * 1000 - elapsedMs);
 
   const t = setTimeout(() => {
     const s = getRoom(roomCode);
     if (!s || s.phase !== 'playing') return;
     endTurn(s);
     broadcast(roomCode, s);
-    scheduleTurnTimer(roomCode); // next clue phase
+    scheduleTurnTimer(roomCode);
   }, remainingMs);
 
   turnTimers.set(roomCode, t);
 }
-// ────────────────────────────────────────────────────────────────────────────
+// ─────────────────────────────────────────────────────────────────────────────
 
 io.on('connection', socket => {
   console.log(`Socket connected: ${socket.id}`);
+
+  // ── Auth ─────────────────────────────────────────────────────────────────
+  socket.on('register', ({ nickname, password }) => {
+    const result = registerUser(nickname, password);
+    if ('error' in result) { socket.emit('authResult', { error: result.error }); return; }
+    socket.emit('authResult', authSuccess(socket.id, result.user));
+  });
+
+  socket.on('login', ({ nickname, password }) => {
+    const result = loginUser(nickname, password);
+    if ('error' in result) { socket.emit('authResult', { error: result.error }); return; }
+    socket.emit('authResult', authSuccess(socket.id, result.user));
+  });
+
+  socket.on('resumeSession', ({ token }) => {
+    const user = sessions.get(token);
+    if (user) {
+      socketToUser.set(socket.id, user);
+      socket.emit('authResult', { user, token });
+    }
+    // If token is unknown, silently ignore — client will clear it
+  });
+  // ─────────────────────────────────────────────────────────────────────────
 
   socket.on('getRooms', () => {
     socket.emit('roomList', listRooms());
@@ -150,7 +191,6 @@ io.on('connection', socket => {
     const err = giveClue(state, socket.id, word, count);
     if (err) { socket.emit('error', err); return; }
     broadcast(state.roomCode, state);
-    // Switch to guess-phase timer (1 min)
     scheduleTurnTimer(state.roomCode);
   });
 
@@ -163,14 +203,18 @@ io.on('connection', socket => {
 
     if (result === 'game_ended') {
       clearTurnTimer(state.roomCode);
+      // Save game results for every authenticated player in the room
+      for (const player of state.players) {
+        const user = socketToUser.get(player.id);
+        if (user) {
+          saveGameResult(user.id, state.roomCode, player.team, player.role, player.team === state.winner);
+        }
+      }
     } else if (result === 'turn_ended') {
-      // endTurn was called inside voteCard → new clue phase timer
       scheduleTurnTimer(state.roomCode);
     } else if (result === 'correct') {
-      // +15 s was already applied in state; reschedule with new remaining
       scheduleTurnTimer(state.roomCode);
     }
-    // result === null → just a vote placed, no card revealed yet
   });
 
   socket.on('endTurn', () => {
@@ -189,11 +233,8 @@ io.on('connection', socket => {
     const { roomCode } = state;
     const result = removeSocket(socket.id);
     if (result) {
-      // Socket is still in the io room here, so leaver receives this broadcast too,
-      // sees themselves removed from players → myPlayer becomes null → join screen
       broadcast(result.roomCode, result.state);
     } else {
-      // Last player — room deleted; send a blank lobby state directly
       socket.emit('gameState', { ...state, players: [], hostId: '' });
     }
     socket.leave(roomCode);
@@ -204,6 +245,7 @@ io.on('connection', socket => {
     console.log(`Socket disconnected: ${socket.id}`);
     const result = removeSocket(socket.id);
     if (result) broadcast(result.roomCode, result.state);
+    socketToUser.delete(socket.id);
     broadcastRoomList();
   });
 });
